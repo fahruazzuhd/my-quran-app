@@ -28,7 +28,13 @@ class PlayerController extends GetxController {
     final r = recitation;
     if (r == null) return '';
     final idx = currentAyahIndex.value + 1;
-    return 'Ayah $idx / ${r.ayahs.length}';
+    return 'Ayah $idx of ${r.ayahs.length}';
+  }
+
+  void _syncSeekFraction() {
+    final durMs = duration.value.inMilliseconds;
+    if (durMs <= 0) return;
+    seekPosition.value = position.value.inMilliseconds / durMs;
   }
 
   @override
@@ -48,14 +54,14 @@ class PlayerController extends GetxController {
     _positionSub = _audio.positionStream.listen((p) {
       if (!isSeeking.value) {
         position.value = p;
-        final dur = duration.value;
-        if (dur.inMilliseconds > 0) {
-          seekPosition.value = p.inMilliseconds / dur.inMilliseconds;
-        }
+        _syncSeekFraction();
       }
     });
     _durationSub = _audio.durationStream.listen((d) {
-      duration.value = d;
+      if (d.inMilliseconds > 0) {
+        duration.value = d;
+        _syncSeekFraction();
+      }
     });
     _ayahSub = _audio.currentAyahIndexStream.listen((i) {
       currentAyahIndex.value = i;

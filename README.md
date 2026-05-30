@@ -70,7 +70,7 @@ flutter analyze
 1. **Domain** exposes entities and use cases; no Flutter/Dio imports.
 2. **Data** maps JSON to models and implements `QuranRepository`.
 3. **Presentation** uses GetX controllers that call use cases only.
-4. Each surah play loads all ayah MP3 URLs into a `ConcatenatingAudioSource` for continuous playback with a single progress bar.
+4. Each surah is one continuous track: ayah MP3s play via `ConcatenatingAudioSource`, while `SurahPlaybackTimeline` sums every ayah duration and maps global position/seek across the full surah (fixes per-ayah `00:06` display on iOS/Android).
 
 ## Screenshots
 

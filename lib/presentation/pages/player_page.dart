@@ -72,7 +72,7 @@ class PlayerPage extends GetView<PlayerController> {
               Obx(() {
                 final label = controller.currentAyahLabel;
                 return Text(
-                  label,
+                  'Full surah · $label',
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 );
               }),
@@ -94,6 +94,7 @@ class PlayerPage extends GetView<PlayerController> {
     final fraction = controller.seekPosition.value;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Slider(
           value: fraction.clamp(0.0, 1.0),
