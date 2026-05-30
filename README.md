@@ -84,12 +84,7 @@ flutter analyze
 <p align="center">
   <sub>Home · Player</sub>
 </p>
-
-Suggested captures:
-
-1. Home — surah list + search + reciter dropdown  
-2. Player — now playing with progress slider  
-3. Mini player bar on home after returning from player  
+ 
 
 ## License
 
