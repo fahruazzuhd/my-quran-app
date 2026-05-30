@@ -38,6 +38,11 @@ class HomeController extends GetxController {
   final reciters = <Reciter>[].obs;
 
   StreamSubscription<PlaybackState>? _playbackSub;
+  bool _isAdvancingSurah = false;
+  int _playbackGeneration = 0;
+
+  static const int minSurahNumber = 1;
+  static const int maxSurahNumber = 114;
 
   List<Surah> get filteredSurahs {
     final q = searchQuery.value.trim().toLowerCase();
@@ -67,11 +72,24 @@ class HomeController extends GetxController {
 
   bool isSurahActive(int surahNumber) => activeSurahNumber.value == surahNumber;
 
+  int? get currentSurahNumber =>
+      _audioPlayerService.currentRecitation?.surah.number ??
+      activeSurahNumber.value;
+
+  bool get canPlayPreviousSurah =>
+      (currentSurahNumber ?? minSurahNumber) > minSurahNumber;
+
+  bool get canPlayNextSurah =>
+      (currentSurahNumber ?? maxSurahNumber) < maxSurahNumber;
+
   @override
   void onInit() {
     super.onInit();
     _syncFromAudioService();
-    _playbackSub = _audioPlayerService.playbackStateStream.listen((_) {
+    _playbackSub = _audioPlayerService.playbackStateStream.listen((state) {
+      if (state == PlaybackState.completed) {
+        _handleSurahCompleted();
+      }
       _syncFromAudioService();
     });
     loadData();
@@ -82,14 +100,47 @@ class HomeController extends GetxController {
     final rec = _audioPlayerService.currentRecitation;
     final state = _audioPlayerService.state;
 
-    if (rec == null ||
-        state == PlaybackState.idle ||
-        state == PlaybackState.completed) {
+    if (rec == null || state == PlaybackState.idle) {
       activeSurahNumber.value = null;
       return;
     }
 
     activeSurahNumber.value = rec.surah.number;
+  }
+
+  Surah? _surahByNumber(int number) =>
+      _allSurahs.firstWhereOrNull((s) => s.number == number);
+
+  Future<void> playNextSurah() => playAdjacentSurah(1);
+
+  Future<void> playPreviousSurah() => playAdjacentSurah(-1);
+
+  Future<void> playAdjacentSurah(int delta) async {
+    final base = currentSurahNumber;
+    if (base == null) return;
+
+    final target = base + delta;
+    if (target < minSurahNumber || target > maxSurahNumber) return;
+
+    final surah = _surahByNumber(target);
+    if (surah == null) return;
+
+    await _startSurahPlayback(surah, openPlayer: false);
+  }
+
+  Future<void> _handleSurahCompleted() async {
+    if (_isAdvancingSurah) return;
+
+    final current = _audioPlayerService.currentRecitation;
+    if (current == null) return;
+
+    final nextNumber = current.surah.number + 1;
+    if (nextNumber > maxSurahNumber) return;
+
+    final nextSurah = _surahByNumber(nextNumber);
+    if (nextSurah == null) return;
+
+    await _startSurahPlayback(nextSurah, openPlayer: false);
   }
 
   @override
@@ -162,17 +213,28 @@ class HomeController extends GetxController {
     Surah surah, {
     required bool openPlayer,
   }) async {
+    final generation = ++_playbackGeneration;
+    _isAdvancingSurah = true;
     loadingSurahNumber.value = surah.number;
     errorMessage.value = null;
+
+    await _audioPlayerService.prepareForNewSurah();
 
     final result = await _getSurahRecitation(
       surahNumber: surah.number,
       reciterId: selectedReciterId.value,
     );
 
+    if (generation != _playbackGeneration) {
+      _isAdvancingSurah = false;
+      loadingSurahNumber.value = null;
+      return;
+    }
+
     loadingSurahNumber.value = null;
 
     if (result.failure != null) {
+      _isAdvancingSurah = false;
       errorMessage.value = result.failure!.message;
       Get.snackbar('Error', result.failure!.message);
       return;
@@ -181,12 +243,20 @@ class HomeController extends GetxController {
     final recitation = result.data!;
     try {
       await _audioPlayerService.loadAndPlay(recitation);
+      if (generation != _playbackGeneration) return;
+
       _syncFromAudioService();
       if (openPlayer) {
         await Get.toNamed(AppRoutes.player);
       }
     } catch (e) {
-      Get.snackbar('Playback Error', e.toString());
+      if (generation == _playbackGeneration) {
+        Get.snackbar('Playback Error', e.toString());
+      }
+    } finally {
+      if (generation == _playbackGeneration) {
+        _isAdvancingSurah = false;
+      }
     }
   }
 }

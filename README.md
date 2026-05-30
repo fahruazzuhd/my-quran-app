@@ -10,6 +10,7 @@ Mobile Quran audio player built for a technical assessment. Streams verse-by-ver
 | Play / Pause / Resume | `just_audio` via `AudioPlayerService` |
 | Progress (current / total) | Position & duration labels + slider |
 | Seek | Draggable `Slider` + ±10s skip buttons |
+| Next / previous surah | Skip previous/next on player + auto-advance when surah ends |
 
 ## Tech stack
 

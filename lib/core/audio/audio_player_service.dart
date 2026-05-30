@@ -59,6 +59,14 @@ class AudioPlayerService {
     }
   }
 
+  Future<void> prepareForNewSurah() async {
+    if (_player.playing) {
+      await _player.pause();
+    }
+    await _player.stop();
+    _setState(PlaybackState.loading);
+  }
+
   Future<void> loadAndPlay(SurahRecitation recitation) async {
     _currentRecitation = recitation;
     _setState(PlaybackState.loading);
