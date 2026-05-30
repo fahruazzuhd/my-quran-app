@@ -1,0 +1,29 @@
+name: my_quran
+description: "Quran audio player using Al Quran Cloud API."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  get: ^4.7.2
+  get_it: ^8.0.3
+  dio: ^5.8.0+1
+  just_audio: ^0.9.46
+  equatable: ^2.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/screenshot/
+
